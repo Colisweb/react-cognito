@@ -1,8 +1,8 @@
-import { CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js';
-import { CognitoIdentityCredentials } from 'aws-cognito-sdk';
-import { Action } from './actions';
-import { mkAttrList, sendAttributeVerificationCode } from './attributes';
-import { buildLogins } from './utils';
+import { CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js'
+import { CognitoIdentityCredentials } from 'aws-sdk'
+import { Action } from './actions'
+import { mkAttrList, sendAttributeVerificationCode } from './attributes'
+import { buildLogins } from './utils'
 
 /**
  * sends the email verification code and transitions to the correct state
@@ -12,17 +12,21 @@ import { buildLogins } from './utils';
 */
 const emailVerificationFlow = (user, attributes) =>
   new Promise(resolve =>
-    sendAttributeVerificationCode(user, 'email').then((required) => {
-      if (required) {
-        resolve(Action.emailVerificationRequired(attributes));
-      } else {
-        // dead end?
-        resolve(Action.loggingIn(attributes));
+    sendAttributeVerificationCode(user, 'email').then(
+      required => {
+        if (required) {
+          resolve(Action.emailVerificationRequired(attributes))
+        } else {
+          // dead end?
+          resolve(Action.loggingIn(attributes))
+        }
+      },
+      error => {
+        // some odd classes of error here
+        resolve(Action.emailVerificationFailed(error, attributes))
       }
-    }, (error) => {
-      // some odd classes of error here
-      resolve(Action.emailVerificationFailed(error, attributes));
-    }));
+    )
+  )
 
 /**
  * logs in to the federated identity pool with a JWT
@@ -33,16 +37,16 @@ const emailVerificationFlow = (user, attributes) =>
 */
 const refreshIdentityCredentials = (username, jwtToken, config) =>
   new Promise((resolve, reject) => {
-    const logins = buildLogins(username, jwtToken, config);
-    const creds = new CognitoIdentityCredentials(logins);
-    creds.refresh((error) => {
+    const logins = buildLogins(username, jwtToken, config)
+    const creds = new CognitoIdentityCredentials(logins)
+    creds.refresh(error => {
       if (error) {
-        reject(error.message);
+        reject(error.message)
       } else {
-        resolve(creds);
+        resolve(creds)
       }
-    });
-  });
+    })
+  })
 
 /**
  * establishes a session with the user pool, and logs into the federated identity
@@ -56,19 +60,20 @@ const performLogin = (user, config) =>
     if (user != null) {
       user.getSession((err, session) => {
         if (err) {
-          resolve(Action.loginFailure(user, err.message));
+          resolve(Action.loginFailure(user, err.message))
         } else {
-          const jwtToken = session.getIdToken().getJwtToken();
-          const username = user.getUsername();
+          const jwtToken = session.getIdToken().getJwtToken()
+          const username = user.getUsername()
           refreshIdentityCredentials(username, jwtToken, config).then(
             creds => resolve(Action.login(creds)),
-            message => resolve(Action.loginFailure(user, message)));
+            message => resolve(Action.loginFailure(user, message))
+          )
         }
-      });
+      })
     } else {
-      reject('user is null');
+      reject('user is null')
     }
-  });
+  })
 
 /**
  *
@@ -104,38 +109,38 @@ const authenticate = (username, password, userPool, config, dispatch) =>
     const creds = new AuthenticationDetails({
       Username: username,
       Password: password,
-    });
+    })
 
     const user = new CognitoUser({
       Username: username,
       Pool: userPool,
-    });
+    })
 
     user.authenticateUser(creds, {
       onSuccess: () => {
-        console.log('dispatching', dispatch);
-        dispatch(Action.authenticated(user));
-        resolve();
+        console.log('dispatching', dispatch)
+        dispatch(Action.authenticated(user))
+        resolve()
       },
-      onFailure: (error) => {
+      onFailure: error => {
         if (error.code === 'UserNotConfirmedException') {
-          dispatch(Action.confirmationRequired(user));
-          resolve();
+          dispatch(Action.confirmationRequired(user))
+          resolve()
         } else {
-          dispatch(Action.loginFailure(user, error.message));
-          reject(error);
+          dispatch(Action.loginFailure(user, error.message))
+          reject(error)
         }
       },
       mfaRequired: () => {
-        dispatch(Action.mfaRequired(user));
-        resolve();
+        dispatch(Action.mfaRequired(user))
+        resolve()
       },
       newPasswordRequired: () => {
-        dispatch(Action.newPasswordRequired(user));
-        resolve();
+        dispatch(Action.newPasswordRequired(user))
+        resolve()
       },
-    });
-  });
+    })
+  })
 
 /**
  * sign up this user with the user pool provided
@@ -150,18 +155,13 @@ const registerUser = (userPool, config, username, password, attributes) =>
   new Promise((resolve, reject) =>
     userPool.signUp(username, password, mkAttrList(attributes), null, (err, result) => {
       if (err) {
-        reject(err.message);
+        reject(err.message)
       } else if (result.userConfirmed === false) {
-        resolve(Action.confirmationRequired(result.user));
+        resolve(Action.confirmationRequired(result.user))
       } else {
-        resolve(authenticate(username, password, userPool));
+        resolve(authenticate(username, password, userPool))
       }
-    }));
+    })
+  )
 
-
-export {
-  authenticate,
-  performLogin,
-  registerUser,
-  emailVerificationFlow,
-};
+export { authenticate, performLogin, registerUser, emailVerificationFlow }

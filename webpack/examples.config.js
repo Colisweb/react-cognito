@@ -1,10 +1,10 @@
-import baseConfig, { options } from './base.config';
+import baseConfig, { options } from './base.config'
 
 export default {
   ...baseConfig,
 
   entry: {
-    'bundle': './examples/src/index.jsx',
+    bundle: './examples/src/index.jsx',
   },
 
   output: {
@@ -18,13 +18,12 @@ export default {
   },
 
   externals: {
-      react: 'React',
-      'react-dom': 'ReactDOM',
-      redux: 'Redux',
-      'react-redux': 'ReactRedux',
-      'react-router': 'ReactRouter',
-      'aws-cognito-sdk': 'AWSCognito',
-      'amazon-cognito-identity-js': 'AmazonCognitoIdentity',
-      
+    react: 'React',
+    'react-dom': 'ReactDOM',
+    redux: 'Redux',
+    'react-redux': 'ReactRedux',
+    'react-router': 'ReactRouter',
+    'aws-sdk': 'AWS',
+    'amazon-cognito-identity-js': 'AmazonCognitoIdentity',
   },
-};
+}
