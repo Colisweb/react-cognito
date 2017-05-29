@@ -26,7 +26,7 @@ const emailVerificationRequired = (state, dispatch) => {
   if (state.cognito.state === CognitoState.AUTHENTICATED) {
     const user = state.cognito.user;
     getUserAttributes(user).then((attributes) => {
-      if (attributes.email_verified !== 'true') {
+      if (!attributes.email_verified) {
         emailVerificationFlow(user, attributes).then(dispatch);
       } else {
         dispatch(Action.loggingIn(attributes));
