@@ -1,4 +1,3 @@
-
 import { Action } from './actions';
 
 /**
@@ -31,7 +30,13 @@ const getUserAttributes = user =>
         const attributes = {};
         for (let i = 0; i < result.length; i += 1) {
           const name = result[i].getName();
-          const value = result[i].getValue();
+          let value = result[i].getValue();
+          if (value === 'True') {
+            value = true;
+          }
+          if (value === 'False') {
+            value = false;
+          }
           attributes[name] = value;
         }
         resolve(attributes);
@@ -68,9 +73,4 @@ const updateAttributes = (user, attributes) =>
     });
   });
 
-export {
-  sendAttributeVerificationCode,
-  getUserAttributes,
-  updateAttributes,
-  mkAttrList,
-};
+export { sendAttributeVerificationCode, getUserAttributes, updateAttributes, mkAttrList };
