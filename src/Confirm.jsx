@@ -17,19 +17,23 @@ const confirm = (verificationCode, user, dispatch) =>
         dispatch(Action.confirmFailed(user));
         reject(error.message);
       } else {
-        dispatch(Action.logout());
+        dispatch(Action.partialLogout());
         resolve(user);
       }
     });
   });
 
 const resend = (user, dispatch) =>
-  user.resendConfirmationCode((err) => {
-    if (err) {
-      dispatch(Action.confirmationRequired(user, err.message));
-    } else {
-      dispatch(Action.confirmationRequired(user, 'Confirmation code resent'));
-    }
+  new Promise((resolve, reject) => {
+    user.resendConfirmationCode((err) => {
+      if (err) {
+        dispatch(Action.confirmationRequired(user));
+        reject(err.message);
+      } else {
+        dispatch(Action.confirmationRequired(user));
+        resolve(user);
+      }
+    });
   });
 
 const mapStateToProps = state => ({
